@@ -1,0 +1,34 @@
+= Changelog
+:toc: left
+:toclevels: 2
+
+Toutes les modifications notables de ce projet sont documentées ici.
+Le format s'inspire de https://keepachangelog.com/fr/1.1.0/[Keep a Changelog]
+et le projet suit https://semver.org/lang/fr/[Semantic Versioning].
+
+== 0.1.0 — 2026-05-02
+
+Première version publique.
+
+=== Ajouté
+
+* `Ghostscript.path` / `.available?` / `.version` — détection et
+  introspection du binaire `gs`. Path mis en cache après le premier
+  lookup ; `.reset_cache!` pour forcer une nouvelle recherche.
+* `Ghostscript.compress(input, output, quality:)` — compression PDF
+  via `gs -sDEVICE=pdfwrite -dPDFSETTINGS=...`. Cinq presets sous
+  forme de Symbol ou d'enum `Quality` : `:screen`, `:ebook`
+  *(défaut)*, `:printer`, `:prepress`, `:default`.
+* `Ghostscript.run(args)` — échappatoire bas-niveau pour invoquer
+  `gs` avec n'importe quels arguments (renvoie un `RunResult` avec
+  exit code, stdout, stderr).
+* `Ghostscript::Result` — retour structuré des opérations de
+  compression : `input_size`, `output_size`, `reduction_percent`,
+  `success?`, `to_s` formaté en Ko/Mo et %.
+* `Ghostscript::Error` — exception levée quand `gs` n'est pas
+  installé ou que le fichier d'entrée est introuvable.
+* 20 specs (5 pending sur les machines sans `gs` — testés en CI
+  Linux et FreeBSD).
+* CI GitHub Actions : format Crystal + ameba + specs sur Linux et
+  FreeBSD 15 (avec installation de `ghostscript` dans la matrice).
+* README bilingue FR + EN.

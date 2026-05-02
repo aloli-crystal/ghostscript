@@ -1,0 +1,35 @@
+name: ghostscript
+version: 0.1.0
+
+description: |
+  Crystal wrapper around the `gs` (Ghostscript) binary for PDF
+  compression, conversion and post-processing. Pure shell-out via
+  `Process.run` — no FFI, no C bindings, no AGPL contamination
+  (the wrapper stays MIT, only the upstream gs binary on disk is
+  AGPL-licensed and remains the user's responsibility).
+
+  The shard auto-detects `gs` in `$PATH` and exposes a typed API :
+
+  * `Ghostscript.available?` — returns `true` if a usable binary is found
+  * `Ghostscript.version`    — parsed `gs -v` output (e.g. "10.04.0")
+  * `Ghostscript.compress(input, output, quality: :ebook)` — typical
+    PDF size reduction (downsampling images, JPEG recompression,
+    font subsetting). Quality presets : `:screen` (72 dpi),
+    `:ebook` (150 dpi, default), `:printer` (300 dpi),
+    `:prepress` (300 dpi, color-preserving).
+  * `Ghostscript.run(args)` — escape hatch for arbitrary `gs` invocations.
+
+  Out of scope : font rendering, PDF parsing, PostScript interpretation
+  (use the `pdf` shard for those).
+
+authors:
+  - Philippe Nénert <philippe@aloli.fr>
+
+license: MIT
+
+crystal: ">= 1.19.0"
+
+development_dependencies:
+  ameba:
+    github: crystal-ameba/ameba
+    version: "~> 1.6"

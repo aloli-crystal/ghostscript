@@ -1,0 +1,12 @@
+# https://crystal-ameba.github.io/ameba/
+Style/RedundantBegin:
+  Enabled: false
+
+Style/MultilineCurlyBlock:
+  Enabled: false
+
+Lint/UselessAssign:
+  Enabled: true
+
+Documentation:
+  Enabled: false

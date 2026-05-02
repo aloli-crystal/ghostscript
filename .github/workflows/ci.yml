@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [production]
+  pull_request:
+    branches: [production]
+
+jobs:
+  linux:
+    name: Linux (Crystal latest)
+    runs-on: ubuntu-latest
+    container:
+      image: crystallang/crystal:latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Ghostscript
+        run: apt-get update && apt-get install -y ghostscript
+
+      - name: Show gs version
+        run: gs -v
+
+      - name: Cache shards
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/shards
+          key: ${{ runner.os }}-shards-${{ hashFiles('shard.yml') }}
+
+      - name: Install dependencies
+        run: shards install
+
+      - name: Check formatting
+        run: crystal tool format --check
+
+      - name: Run ameba
+        run: bin/ameba
+
+      - name: Run specs
+        run: crystal spec --error-trace
+
+  freebsd:
+    name: FreeBSD 15
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run on FreeBSD 15
+        uses: cross-platform-actions/action@v0.27.0
+        with:
+          operating_system: freebsd
+          version: '15.0'
+          shell: bash
+          run: |
+            sudo pkg install -y crystal shards ghostscript10
+            gs -v
+            shards install
+            crystal tool format --check
+            crystal spec --error-trace

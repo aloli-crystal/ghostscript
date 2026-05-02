@@ -1,0 +1,148 @@
+= ghostscript
+:toc: left
+:toclevels: 2
+
+image:https://github.com/aloli-crystal/ghostscript/actions/workflows/ci.yml/badge.svg[CI,link=https://github.com/aloli-crystal/ghostscript/actions/workflows/ci.yml]
+
+Crystal wrapper around the `gs` (Ghostscript) binary for PDF
+compression and post-processing. Pure shell-out via `Process.run` —
+no FFI, no C bindings.
+
+French version: link:README.fr.adoc[README.fr.adoc].
+
+== Why a wrapper rather than a port?
+
+Ghostscript is a 35+ year old C codebase (~300k lines) implementing
+a full PostScript interpreter, a PDF interpreter, image processing
+(libjpeg, libtiff, ICC color management) and a dozen rendering
+backends. A pure-Crystal port is unrealistic.
+
+The `gs` binary is **everywhere** : `brew install ghostscript` on
+macOS, `pkg install ghostscript10` on FreeBSD, `apt install ghostscript`
+on Debian/Ubuntu. Crystal already has clean shell-out support
+(`Process.run`, `Process.find_executable`).
+
+The wrapper itself stays MIT-licensed. The upstream `gs` binary on
+disk is AGPLv3 — but invoking it from Crystal code does **not**
+contaminate your code (same legal footing as calling `tar` or `git`).
+
+== Installation
+
+Runtime requirement : `gs` available in `$PATH`.
+
+[source,shell]
+----
+# macOS
+brew install ghostscript
+
+# FreeBSD
+pkg install ghostscript10
+
+# Debian / Ubuntu
+apt install ghostscript
+
+# Verify
+gs -v
+----
+
+Add to your `shard.yml` :
+
+[source,yaml]
+----
+dependencies:
+  ghostscript:
+    github: aloli-crystal/ghostscript
+    version: ~> 0.1
+----
+
+== Usage
+
+[source,crystal]
+----
+require "ghostscript"
+
+# ── Detection ────────────────────────────────────────────────
+Ghostscript.available?  # => true / false
+Ghostscript.path        # => "/opt/homebrew/bin/gs" | nil
+Ghostscript.version     # => "10.04.0" | nil
+
+# ── Typical use : PDF compression ────────────────────────────
+result = Ghostscript.compress(
+  "in.pdf",
+  "out.pdf",
+  quality: :ebook,        # :screen | :ebook (default) | :printer | :prepress
+)
+
+result.success?            # => true
+result.input_size          # => 12345678 (bytes)
+result.output_size         # => 4321098
+result.reduction_percent   # => 65.0
+puts result                # => "12.0 Mo → 4.2 Mo (-65.0 %)"
+
+# ── Low-level escape hatch ───────────────────────────────────
+res = Ghostscript.run([
+  "-sDEVICE=pdfwrite",
+  "-sOutputFile=out.pdf",
+  "-dPDFSETTINGS=/screen",
+  "-dNOPAUSE",
+  "-dBATCH",
+  "in.pdf",
+])
+res.success?    # => true
+res.stdout      # => raw stdout output
+res.stderr      # => raw stderr output
+res.exit_code   # => Int32
+----
+
+== Quality presets
+
+The five `Quality` values mirror Ghostscript's `-dPDFSETTINGS=...`
+presets :
+
+[cols="1,2,4"]
+|===
+| Symbol | gs setting | Use case
+
+| `:screen`   | `/screen`   | 72 dpi, smallest size, screen reading only
+| `:ebook`    | `/ebook`    | 150 dpi, default — good size/quality trade-off
+| `:printer`  | `/printer`  | 300 dpi, office printing
+| `:prepress` | `/prepress` | 300 dpi, color-preserving, professional printing
+| `:default`  | `/default`  | Let `gs` choose (usually equivalent to `:ebook`)
+|===
+
+You can also pass a `Ghostscript::Quality` enum value directly :
+
+[source,crystal]
+----
+Ghostscript.compress("in.pdf", "out.pdf", quality: Ghostscript::Quality::Screen)
+Ghostscript::Quality.parse("printer")  # => Quality::Printer
+----
+
+== Error handling
+
+[source,crystal]
+----
+begin
+  Ghostscript.compress("in.pdf", "out.pdf")
+rescue Ghostscript::Error => ex
+  STDERR.puts ex.message
+  # "Ghostscript binary `gs` not found in PATH"
+  # "Input file not found: in.pdf"
+end
+----
+
+When `Ghostscript.available?` returns `false`, you can fall back to
+a pure-Crystal alternative or instruct the user to install `gs`.
+
+== License
+
+MIT — see link:LICENSE[LICENSE].
+
+The `gs` binary you call is licensed under AGPLv3 (or commercial)
+by Artifex Software. Calling it from this wrapper does not
+contaminate your application's license.
+
+== References
+
+* https://www.ghostscript.com/[Ghostscript home]
+* https://ghostscript.readthedocs.io/en/latest/VectorDevices.html#pdfwrite[gs `pdfwrite` device options]

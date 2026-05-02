@@ -1,0 +1,152 @@
+= ghostscript
+:toc: left
+:toclevels: 2
+
+image:https://github.com/aloli-crystal/ghostscript/actions/workflows/ci.yml/badge.svg[CI,link=https://github.com/aloli-crystal/ghostscript/actions/workflows/ci.yml]
+
+Wrapper Crystal autour du binaire `gs` (Ghostscript) pour la
+compression et le post-traitement PDF. Pure invocation système via
+`Process.run` — aucune FFI, aucun binding C.
+
+Version anglaise : link:README.adoc[README.adoc].
+
+== Pourquoi un wrapper plutôt qu'un portage ?
+
+Ghostscript est une base de code C de plus de 35 ans (~300k lignes)
+implémentant un interpréteur PostScript complet, un interpréteur PDF,
+du traitement d'image (libjpeg, libtiff, gestion ICC des couleurs) et
+une douzaine de backends de rendu. Un portage pur Crystal n'est pas
+réaliste.
+
+Le binaire `gs` est **partout** : `brew install ghostscript` sur
+macOS, `pkg install ghostscript10` sur FreeBSD, `apt install ghostscript`
+sur Debian/Ubuntu. Crystal a déjà un excellent support du shell-out
+(`Process.run`, `Process.find_executable`).
+
+Le wrapper lui-même reste sous licence MIT. Le binaire `gs` amont sur
+disque est sous AGPLv3 — mais l'invoquer depuis du code Crystal **ne
+contamine pas** votre code (même base légale que d'appeler `tar` ou
+`git`).
+
+== Installation
+
+Prérequis runtime : `gs` accessible dans `$PATH`.
+
+[source,shell]
+----
+# macOS
+brew install ghostscript
+
+# FreeBSD
+pkg install ghostscript10
+
+# Debian / Ubuntu
+apt install ghostscript
+
+# Vérifier
+gs -v
+----
+
+Ajouter à votre `shard.yml` :
+
+[source,yaml]
+----
+dependencies:
+  ghostscript:
+    github: aloli-crystal/ghostscript
+    version: ~> 0.1
+----
+
+== Utilisation
+
+[source,crystal]
+----
+require "ghostscript"
+
+# ── Détection ────────────────────────────────────────────────
+Ghostscript.available?  # => true / false
+Ghostscript.path        # => "/opt/homebrew/bin/gs" | nil
+Ghostscript.version     # => "10.04.0" | nil
+
+# ── Cas typique : compression PDF ────────────────────────────
+result = Ghostscript.compress(
+  "in.pdf",
+  "out.pdf",
+  quality: :ebook,        # :screen | :ebook (défaut) | :printer | :prepress
+)
+
+result.success?            # => true
+result.input_size          # => 12345678 (octets)
+result.output_size         # => 4321098
+result.reduction_percent   # => 65.0
+puts result                # => "12,0 Mo → 4,2 Mo (-65,0 %)"
+
+# ── Échappatoire bas niveau ──────────────────────────────────
+res = Ghostscript.run([
+  "-sDEVICE=pdfwrite",
+  "-sOutputFile=out.pdf",
+  "-dPDFSETTINGS=/screen",
+  "-dNOPAUSE",
+  "-dBATCH",
+  "in.pdf",
+])
+res.success?    # => true
+res.stdout      # => stdout brut
+res.stderr      # => stderr brut
+res.exit_code   # => Int32
+----
+
+== Presets de qualité
+
+Les cinq valeurs de `Quality` reflètent les presets
+`-dPDFSETTINGS=...` de Ghostscript :
+
+[cols="1,2,4"]
+|===
+| Symbole | Setting gs | Cas d'usage
+
+| `:screen`   | `/screen`   | 72 dpi, plus petite taille, lecture écran uniquement
+| `:ebook`    | `/ebook`    | 150 dpi, défaut — bon compromis taille/qualité
+| `:printer`  | `/printer`  | 300 dpi, impression bureautique
+| `:prepress` | `/prepress` | 300 dpi, color-preserving, impression pro
+| `:default`  | `/default`  | Laisse `gs` choisir (~ équivalent `:ebook`)
+|===
+
+Vous pouvez aussi passer une valeur d'enum `Ghostscript::Quality`
+directement :
+
+[source,crystal]
+----
+Ghostscript.compress("in.pdf", "out.pdf", quality: Ghostscript::Quality::Screen)
+Ghostscript::Quality.parse("printer")  # => Quality::Printer
+----
+
+== Gestion des erreurs
+
+[source,crystal]
+----
+begin
+  Ghostscript.compress("in.pdf", "out.pdf")
+rescue Ghostscript::Error => ex
+  STDERR.puts ex.message
+  # "Ghostscript binary `gs` not found in PATH"
+  # "Input file not found: in.pdf"
+end
+----
+
+Quand `Ghostscript.available?` renvoie `false`, vous pouvez basculer
+sur une alternative pure Crystal ou demander à l'utilisateur
+d'installer `gs`.
+
+== Licence
+
+MIT — voir link:LICENSE[LICENSE].
+
+Le binaire `gs` que vous appelez est sous licence AGPLv3 (ou
+commerciale) par Artifex Software. L'appeler depuis ce wrapper ne
+contamine pas la licence de votre application.
+
+== Références
+
+* https://www.ghostscript.com/[Site Ghostscript]
+* https://ghostscript.readthedocs.io/en/latest/VectorDevices.html#pdfwrite[Options du device `pdfwrite`]
