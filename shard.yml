@@ -1,5 +1,5 @@
 name: ghostscript
-version: 0.1.1
+version: 0.2.0
 
 description: |
   Crystal wrapper around the `gs` (Ghostscript) binary for PDF
@@ -33,3 +33,11 @@ development_dependencies:
   ameba:
     github: crystal-ameba/ameba
     version: "~> 1.6"
+
+# `pdftops` — PDF→PostScript via the gs `ps2write`/`eps2write` device.
+# A poppler-utils equivalent that lives here (not in the pure `pdf`
+# lib) because it is a thin `gs` shell-out, not native PostScript
+# generation. Reachable on its own or via `alolipdf tops`.
+targets:
+  pdftops:
+    main: src/bin/pdftops.cr

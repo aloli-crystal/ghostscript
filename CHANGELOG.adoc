@@ -6,6 +6,22 @@ Toutes les modifications notables de ce projet sont documentées ici.
 Le format s'inspire de https://keepachangelog.com/fr/1.1.0/[Keep a Changelog]
 et le projet suit https://semver.org/lang/fr/[Semantic Versioning].
 
+== 0.2.0 — 2026-06-05
+
+=== Ajouté
+
+* **`Ghostscript.to_postscript(input, output, …)`** — convertit un PDF
+  en PostScript via le device `gs` `ps2write` (ou `eps2write` avec
+  `eps: true`). Options : plage de pages (`first_page`/`last_page`),
+  niveau PostScript (2 ou 3), mot de passe. Retourne un `Result`.
+* **Binaire `pdftops`** (`src/bin/pdftops.cr`) — équivalent
+  poppler-utils, nouvelle cible du shard. `pdftops <doc.pdf>
+  [<sortie.ps>]` avec `-o/-f/-l/-e(eps)/-L(niveau)/-p`. Conventions CLI
+  ALOLI (`help [<sous-commande>]`, `-h/--help`, `-V/--version`, shorts).
+  Loge ici (et non dans le shard `pdf`, pur) parce que c'est un relais
+  `gs`, pas une génération PostScript native — cohérent avec la
+  stratégie ALOLI de report du rendu.
+
 == 0.1.0 — 2026-05-02
 
 Première version publique.

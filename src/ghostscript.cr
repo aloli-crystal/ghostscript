@@ -118,6 +118,55 @@ module Ghostscript
     )
   end
 
+  # Convertit un PDF en PostScript via le device `ps2write` (ou
+  # `eps2write` quand `eps: true`). C'est le moteur de l'utilitaire
+  # `pdftops` : une génération PostScript native serait disproportionnée,
+  # on délègue donc à `gs`.
+  #
+  # * `first_page` / `last_page` — plage de pages (1-based), optionnelle.
+  # * `eps` — produit de l'EPS plutôt que du PostScript multipage.
+  # * `level` — niveau PostScript (2 ou 3 ; toute autre valeur → 2).
+  # * `password` — mot de passe du document chiffré, le cas échéant.
+  #
+  # Lève `Error` si `gs` est absent ou l'entrée introuvable. La sortie
+  # est un PostScript valide quand `Result#success?`.
+  def to_postscript(
+    input : String,
+    output : String,
+    first_page : Int32? = nil,
+    last_page : Int32? = nil,
+    eps : Bool = false,
+    level : Int32 = 2,
+    password : String? = nil,
+  ) : Result
+    raise Error.new("Ghostscript binary `gs` not found in PATH") unless available?
+    raise Error.new("Input file not found: #{input}") unless File.exists?(input)
+
+    device = eps ? "eps2write" : "ps2write"
+    args = [
+      "-q", "-dNOPAUSE", "-dBATCH", "-dSAFER",
+      "-sDEVICE=#{device}",
+      "-dLanguageLevel=#{level == 3 ? 3 : 2}",
+      "-sOutputFile=#{output}",
+    ]
+    args << "-dFirstPage=#{first_page}" if first_page
+    args << "-dLastPage=#{last_page}" if last_page
+    args << "-sPDFPassword=#{password}" if password
+    args << input
+
+    input_size = File.size(input).to_i64
+    res = run(args)
+    output_size = File.exists?(output) ? File.size(output).to_i64 : 0_i64
+
+    Result.new(
+      exit_code: res.exit_code,
+      stdout: res.stdout,
+      stderr: res.stderr,
+      input_size: input_size,
+      output_size: output_size,
+    )
+  end
+
   # Bas-niveau : invoque `gs` avec les arguments donnés. Retourne
   # un `RunResult` avec `exit_code`, `stdout`, `stderr`. N'effectue
   # AUCUN traitement de fichier (taille, validation) — utile quand
