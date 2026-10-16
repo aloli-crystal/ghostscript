@@ -60,13 +60,13 @@ module Ghostscript
   # ```
   def version : String?
     bin = path
-    return nil unless bin
+    return unless bin
     stdout_buf = IO::Memory.new
     stderr_buf = IO::Memory.new
     status = Process.run(bin, ["-v"], output: stdout_buf, error: stderr_buf)
-    return nil unless status.success?
+    return unless status.success?
     text = stdout_buf.to_s
-    return nil if text.empty?
+    return if text.empty?
     if md = text.match(/Ghostscript\s+([\d.]+)/i)
       md[1]
     end

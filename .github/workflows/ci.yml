@@ -8,10 +8,10 @@ on:
 
 jobs:
   linux:
-    name: Linux (Crystal 1.19.1)
+    name: Linux (Crystal 1.22.0)
     runs-on: ubuntu-latest
     container:
-      image: crystallang/crystal:1.19.1
+      image: crystallang/crystal:1.22.0
 
     steps:
       - uses: actions/checkout@v4
@@ -35,7 +35,7 @@ jobs:
         run: crystal tool format --check
 
       - name: Run ameba
-        run: bin/ameba
+        run: crystal run lib/ameba/bin/ameba.cr --
 
       - name: Run specs
         run: crystal spec --error-trace

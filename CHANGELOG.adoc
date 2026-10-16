@@ -6,6 +6,13 @@ Toutes les modifications notables de ce projet sont documentées ici.
 Le format s'inspire de https://keepachangelog.com/fr/1.1.0/[Keep a Changelog]
 et le projet suit https://semver.org/lang/fr/[Semantic Versioning].
 
+== 0.2.1 — 2026-10-16
+
+=== Modifié
+
+* ameba 1.7 et Crystal 1.22.0 en CI ; nouvelles règles appliquées,
+  aucun changement de comportement.
+
 == 0.2.0 — 2026-06-05
 
 === Ajouté
