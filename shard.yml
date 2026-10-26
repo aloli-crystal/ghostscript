@@ -1,5 +1,5 @@
 name: ghostscript
-version: 0.2.2
+version: 0.2.3
 
 description: |
   Crystal wrapper around the `gs` (Ghostscript) binary for PDF
